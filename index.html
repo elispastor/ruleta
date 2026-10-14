@@ -17,8 +17,35 @@
   .encabezado { text-align: center; margin-bottom: 20px; }
   .pulpo { font-size: 3rem; margin-bottom: 10px; animation: flotar 2s ease-in-out infinite; }
   @keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  .pulpo.hablando { animation: hablar 0.3s ease-in-out infinite; }
+  @keyframes hablar {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-5px) scale(1.1); }
+  }
   .titulo { font-size: 1.8rem; font-weight: 800; color: #fbbf24; text-shadow: 0 0 20px rgba(251,191,36,0.5); text-align: center; }
   .subtitulo { font-size: 0.95rem; color: #a0c4e8; text-align: center; margin-top: 5px; }
+
+  .burbuja {
+    background: white; color: #0b1c3a;
+    border-radius: 20px;
+    padding: 15px 20px;
+    margin: 15px auto;
+    max-width: 500px;
+    font-size: 1rem;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    display: none;
+  }
+  .burbuja.activa { display: block; }
+  .burbuja::after {
+    content: ''; position: absolute;
+    bottom: -15px; left: 50%;
+    transform: translateX(-50%);
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 15px solid white;
+  }
 
   .ruleta-wrapper {
     position: relative;
@@ -94,7 +121,6 @@
     font-size: 1.1rem; font-weight: bold;
     cursor: pointer;
   }
-  .anuncio .cerrar:hover { transform: scale(1.05); }
 
   .contador { margin-top: 20px; color: #a0c4e8; font-size: 0.95rem; text-align: center; }
   .contador strong { color: #fbbf24; font-size: 1.3rem; }
@@ -126,10 +152,12 @@
 <body>
 
 <div class="encabezado">
-  <div class="pulpo">🐙</div>
+  <div class="pulpo" id="pulpo">🐙</div>
   <div class="titulo">LA RULETA DEL PULPO CORDIAL</div>
   <div class="subtitulo">Comunidad que se ayuda</div>
 </div>
+
+<div class="burbuja" id="burbuja"></div>
 
 <div class="ruleta-wrapper">
   <div class="aguja"></div>
@@ -230,6 +258,7 @@ const premios = [
 ];
 
 let ganadoresActuales = [];
+let premioActual = 0;
 
 // ===== AUDIO =====
 let audioCtx = null;
@@ -268,6 +297,63 @@ function sonarFanfarria() {
     osc.start(tiempo);
     osc.stop(tiempo + 0.6);
   });
+}
+
+// ===== VOZ SEGURA (no bloquea el sorteo) =====
+function hablar(texto) {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const voz = new SpeechSynthesisUtterance(texto);
+    voz.lang = 'es-ES';
+    voz.rate = 0.9;
+    voz.pitch = 1.3;
+    voz.volume = 1;
+
+    const voces = window.speechSynthesis.getVoices();
+    let vozMujer = voces.find(v => v.lang.startsWith('es') && 
+      (v.name.toLowerCase().includes('mujer') || 
+       v.name.toLowerCase().includes('female') || 
+       v.name.toLowerCase().includes('monica') || 
+       v.name.toLowerCase().includes('paulina') || 
+       v.name.toLowerCase().includes('helena') ||
+       v.name.toLowerCase().includes('sabina') ||
+       v.name.toLowerCase().includes('carmen') ||
+       v.name.toLowerCase().includes('lucia')));
+    
+    if (!vozMujer) {
+      vozMujer = voces.find(v => v.lang.startsWith('es'));
+    }
+    if (vozMujer) voz.voice = vozMujer;
+
+    const pulpo = document.getElementById('pulpo');
+    const burbuja = document.getElementById('burbuja');
+
+    pulpo.classList.add('hablando');
+    burbuja.textContent = texto;
+    burbuja.classList.add('activa');
+
+    voz.onend = () => {
+      pulpo.classList.remove('hablando');
+      burbuja.classList.remove('activa');
+    };
+    voz.onerror = () => {
+      pulpo.classList.remove('hablando');
+      burbuja.classList.remove('activa');
+    };
+
+    window.speechSynthesis.speak(voz);
+  } catch(e) {
+    // Si falla la voz, no pasa nada
+  }
+}
+
+// Cargar voces
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices();
+  };
 }
 
 // ===== DIBUJAR =====
@@ -351,8 +437,6 @@ function calcularGanador() {
 }
 
 // ===== SORTEO =====
-let premioActual = 0;
-
 function iniciarSorteo() {
   if (girando) return;
   initAudio();
@@ -362,15 +446,21 @@ function iniciarSorteo() {
   document.getElementById('btnGirar').disabled = true;
   document.getElementById('itemsGanadores').innerHTML = '';
   document.getElementById('listaGanadores').classList.remove('activo');
-  girarSiguiente();
+  
+  // Voz de bienvenida (sin bloquear)
+  hablar("¡Atención, atención! Bienvenidos al sorteo de la Ruleta del Pulpo Cordial. Esta ronda apoya al Comedor Social y a la Proveeduría de Medicamentos de La Cumaca. ¡Vamos a lanzar la ruleta!");
+  
+  setTimeout(() => {
+    girarSiguiente();
+  }, 1000);
 }
 
 async function girarSiguiente() {
   if (premioActual >= premios.length) {
-    // Terminó el sorteo
     mostrarListaGanadores();
     girando = false;
     document.getElementById('btnGirar').disabled = false;
+    hablar("¡Tenemos nuestros cinco ganadores! Felicidades a todos. Recuerda: ayudando ganas, y ganando ayudas. ¡Nos vemos en el próximo sorteo!");
     return;
   }
 
@@ -380,6 +470,9 @@ async function girarSiguiente() {
 
   sonarFanfarria();
   mostrarAnuncio(ganador, premios[premioActual]);
+  
+  // Voz de felicitación (sin bloquear)
+  hablar(`¡Felicidades, ${ganador.nombre}! Ganaste el ${premios[premioActual].label}. Tu número es ${ganador.cel}. ¡Felicidades!`);
 }
 
 function mostrarAnuncio(ganador, premio) {
