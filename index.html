@@ -138,7 +138,7 @@
     color: #a0c4e8; font-size: 0.9rem; text-align: center; margin-bottom: 15px;
   }
   .panel-admin textarea {
-    width: 100%; height: 150px;
+    width: 100%; height: 120px;
     padding: 12px;
     border-radius: 12px;
     background: rgba(255,255,255,0.1);
@@ -162,8 +162,46 @@
   .btn-agregar { background: #22c55e; color: white; }
   .btn-reemplazar { background: #fbbf24; color: #0b1c3a; }
   .btn-limpiar { background: #ef4444; color: white; }
-  .btn-cerrar-panel { background: #3b82f6; color: white; }
   .panel-admin .acciones button:hover { transform: scale(1.03); }
+
+  /* ===== MICRÓFONO ===== */
+  .zona-micro {
+    background: rgba(0,0,0,0.3);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+    border: 2px solid #8b5cf6;
+  }
+  .zona-micro .titulo-micro {
+    color: #c4b5fd;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  .btn-micro {
+    background: #8b5cf6; color: white;
+    border: none; border-radius: 50%;
+    width: 70px; height: 70px;
+    font-size: 2rem;
+    cursor: pointer; transition: 0.3s;
+    box-shadow: 0 10px 30px rgba(139,92,246,0.4);
+  }
+  .btn-micro:hover { transform: scale(1.05); }
+  .btn-micro.escuchando {
+    background: #ef4444;
+    animation: pulso 1s ease-in-out infinite;
+  }
+  @keyframes pulso {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+    50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(239,68,68,0); }
+  }
+  .estado-micro {
+    color: #a0c4e8;
+    font-size: 0.85rem;
+    margin-top: 10px;
+    min-height: 20px;
+  }
 
   .panel-admin .lista-actual {
     margin-top: 20px;
@@ -286,10 +324,17 @@
   <button class="cerrar" onclick="cerrarPanel()">✕</button>
   <div class="contenido">
     <h2>📝 AGREGAR PARTICIPANTES</h2>
-    <p class="instrucciones">Escribe un participante por línea con el formato: <strong>Nombre, Celular</strong></p>
+    <p class="instrucciones">Escribe un participante por línea: <strong>Nombre, Celular</strong></p>
+    
+    <!-- ZONA DEL MICRÓFONO -->
+    <div class="zona-micro">
+      <div class="titulo-micro">🎤 DICTAR POR VOZ</div>
+      <button class="btn-micro" id="btnMicro" onclick="toggleMicro()">🎤</button>
+      <div class="estado-micro" id="estadoMicro">Toca el micrófono para dictar</div>
+    </div>
+
     <textarea id="inputParticipantes" placeholder="Pedro Pérez, 0424-1234567
-María González, 0414-7654321
-José Ramírez, 0426-9876543"></textarea>
+María González, 0414-7654321"></textarea>
     <div class="acciones">
       <button class="btn-agregar" onclick="agregarParticipantes()">➕ Agregar</button>
       <button class="btn-reemplazar" onclick="reemplazarParticipantes()">🔄 Reemplazar</button>
@@ -314,10 +359,7 @@ José Ramírez, 0426-9876543"></textarea>
 
 <script>
 // ===== PARTICIPANTES =====
-let participantes = [];
-
-// Datos de prueba (puedes borrarlos)
-participantes = [
+let participantes = [
   { nombre: "Pedro Pérez", cel: "0424-1234567" },
   { nombre: "María González", cel: "0414-7654321" },
   { nombre: "José Ramírez", cel: "0426-9876543" },
@@ -339,13 +381,13 @@ let total = 0;
 let rotacionActual = 0;
 let girando = false;
 
-// Premios por defecto (5 premios = 50% del pozo)
+// Premios en DÓLARES
 let premios = [
-  { pos: "🥇", monto: "$50", label: "PRIMER PREMIO" },
-  { pos: "🥈", monto: "$20", label: "SEGUNDO PREMIO" },
-  { pos: "🥉", monto: "$10", label: "TERCER PREMIO" },
-  { pos: "🏅", monto: "$10", label: "CUARTO PREMIO" },
-  { pos: "🎖️", monto: "$10", label: "QUINTO PREMIO" }
+  { pos: "🥇", monto: "50 dólares", label: "PRIMER PREMIO" },
+  { pos: "🥈", monto: "20 dólares", label: "SEGUNDO PREMIO" },
+  { pos: "🥉", monto: "10 dólares", label: "TERCER PREMIO" },
+  { pos: "🏅", monto: "10 dólares", label: "CUARTO PREMIO" },
+  { pos: "🎖️", monto: "10 dólares", label: "QUINTO PREMIO" }
 ];
 
 let ganadoresActuales = [];
@@ -508,6 +550,72 @@ if ('speechSynthesis' in window) {
   };
 }
 
+// ===== MICRÓFONO =====
+let reconocimiento = null;
+let escuchando = false;
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  reconocimiento = new SpeechRecognition();
+  reconocimiento.lang = 'es-ES';
+  reconocimiento.continuous = false;
+  reconocimiento.interimResults = false;
+
+  reconocimiento.onstart = () => {
+    escuchando = true;
+    document.getElementById('btnMicro').classList.add('escuchando');
+    document.getElementById('estadoMicro').textContent = '🎤 Escuchando... habla ahora';
+  };
+
+  reconocimiento.onresult = (event) => {
+    const texto = event.results[0][0].transcript;
+    const textarea = document.getElementById('inputParticipantes');
+    if (textarea.value.trim()) {
+      textarea.value += '\n' + texto;
+    } else {
+      textarea.value = texto;
+    }
+    document.getElementById('estadoMicro').textContent = '✅ Dicho: ' + texto;
+  };
+
+  reconocimiento.onerror = (event) => {
+    document.getElementById('estadoMicro').textContent = '❌ Error: ' + event.error;
+    escuchando = false;
+    document.getElementById('btnMicro').classList.remove('escuchando');
+  };
+
+  reconocimiento.onend = () => {
+    escuchando = false;
+    document.getElementById('btnMicro').classList.remove('escuchando');
+  };
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btnMicro');
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      document.getElementById('estadoMicro').textContent = '❌ Tu navegador no soporta dictado por voz';
+    }
+  });
+}
+
+function toggleMicro() {
+  if (!reconocimiento) {
+    alert('Tu navegador no soporta dictado por voz. Usa Chrome.');
+    return;
+  }
+  if (escuchando) {
+    reconocimiento.stop();
+  } else {
+    try {
+      reconocimiento.start();
+    } catch(e) {
+      reconocimiento.stop();
+      setTimeout(() => reconocimiento.start(), 200);
+    }
+  }
+}
+
 // ===== GIRAR =====
 function girarUnaVez() {
   return new Promise((resolve) => {
@@ -595,14 +703,13 @@ async function girarSiguiente() {
   const ganador = participantes[indiceGanador];
   ganadoresActuales.push({ ...ganador, premio: premios[premioActual] });
 
-  // ELIMINAR al ganador de la ruleta (no puede ganar 2 veces)
   participantes.splice(indiceGanador, 1);
   cargarParticipantes();
 
   sonarFanfarria();
   mostrarAnuncio(ganador, premios[premioActual]);
   
-  hablar("¡Felicidades, " + ganador.nombre + "! Ganaste el " + premios[premioActual].label + ". Tu número es " + ganador.cel + ". ¡Felicidades!");
+  hablar("¡Felicidades, " + ganador.nombre + "! Ganaste el " + premios[premioActual].label + " de " + premios[premioActual].monto + ". Tu número es " + ganador.cel + ". ¡Felicidades!");
 }
 
 function mostrarAnuncio(ganador, premio) {
@@ -643,6 +750,9 @@ function abrirPanel() {
 
 function cerrarPanel() {
   document.getElementById('panelAdmin').classList.remove('activo');
+  if (reconocimiento && escuchando) {
+    reconocimiento.stop();
+  }
 }
 
 function actualizarListaPanel() {
