@@ -83,17 +83,115 @@
   }
   .centro img { width: 100%; height: 100%; object-fit: contain; }
 
+  .botones { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+  .btn {
+    border: none; border-radius: 60px;
+    padding: 15px 30px;
+    font-size: 1rem; font-weight: bold;
+    cursor: pointer; transition: 0.3s;
+  }
   .btn-girar {
     background: #fbbf24; color: #0b1c3a;
-    border: none; border-radius: 60px;
-    padding: 18px 55px;
-    font-size: 1.3rem; font-weight: bold;
-    cursor: pointer; transition: 0.3s;
+    font-size: 1.2rem; padding: 18px 45px;
     box-shadow: 0 10px 30px rgba(251,191,36,0.4);
-    margin-top: 20px;
   }
   .btn-girar:hover { transform: scale(1.05); }
   .btn-girar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-admin {
+    background: #3b82f6; color: white;
+    box-shadow: 0 10px 30px rgba(59,130,246,0.4);
+  }
+  .btn-admin:hover { transform: scale(1.05); }
+
+  .panel-admin {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(11,28,58,0.98);
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .panel-admin.activo { display: flex; }
+  .panel-admin .cerrar {
+    position: absolute; top: 15px; right: 15px;
+    background: #ef4444; color: white;
+    border: none; border-radius: 50%;
+    width: 45px; height: 45px;
+    font-size: 1.3rem; font-weight: bold;
+    cursor: pointer;
+  }
+  .panel-admin .contenido {
+    max-width: 600px; width: 100%;
+    background: #112b4f;
+    border: 2px solid #fbbf24;
+    border-radius: 20px;
+    padding: 25px;
+    margin-top: 30px;
+  }
+  .panel-admin h2 {
+    color: #fbbf24; text-align: center; margin-bottom: 15px;
+  }
+  .panel-admin .instrucciones {
+    color: #a0c4e8; font-size: 0.9rem; text-align: center; margin-bottom: 15px;
+  }
+  .panel-admin textarea {
+    width: 100%; height: 150px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white; font-family: inherit; font-size: 0.95rem;
+    margin-bottom: 12px;
+    resize: vertical;
+  }
+  .panel-admin textarea::placeholder { color: #9ca3af; }
+  .panel-admin .acciones {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .panel-admin .acciones button {
+    flex: 1; min-width: 120px;
+    padding: 12px 20px;
+    border-radius: 60px;
+    font-size: 0.95rem; font-weight: bold;
+    border: none; cursor: pointer;
+    transition: 0.3s;
+  }
+  .btn-agregar { background: #22c55e; color: white; }
+  .btn-reemplazar { background: #fbbf24; color: #0b1c3a; }
+  .btn-limpiar { background: #ef4444; color: white; }
+  .btn-cerrar-panel { background: #3b82f6; color: white; }
+  .panel-admin .acciones button:hover { transform: scale(1.03); }
+
+  .panel-admin .lista-actual {
+    margin-top: 20px;
+    max-height: 250px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .panel-admin .lista-actual h3 {
+    color: #fbbf24; font-size: 1rem; margin-bottom: 10px;
+  }
+  .panel-admin .lista-actual .item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+  }
+  .panel-admin .lista-actual .item .nombre { color: white; flex: 1; }
+  .panel-admin .lista-actual .item .cel { color: #a0c4e8; font-size: 0.8rem; margin-left: 8px; }
+  .panel-admin .lista-actual .item .eliminar {
+    background: #ef4444; color: white; border: none;
+    border-radius: 50%; width: 28px; height: 28px;
+    cursor: pointer; font-weight: bold;
+    margin-left: 8px;
+  }
 
   .anuncio {
     position: fixed; top: 0; left: 0;
@@ -169,7 +267,10 @@
   <div class="centro"><img src="pulpo.png" alt="Pulpo Cordial"></div>
 </div>
 
-<button class="btn-girar" id="btnGirar" onclick="iniciarSorteo()">🎰 GIRAR</button>
+<div class="botones">
+  <button class="btn btn-girar" id="btnGirar" onclick="iniciarSorteo()">🎰 GIRAR</button>
+  <button class="btn btn-admin" onclick="abrirPanel()">📝 AGREGAR PARTICIPANTES</button>
+</div>
 
 <div class="contador">
   Participantes en esta ronda: <strong id="totalParticipantes">0</strong>
@@ -180,6 +281,28 @@
   <div id="itemsGanadores"></div>
 </div>
 
+<!-- PANEL ADMIN -->
+<div class="panel-admin" id="panelAdmin">
+  <button class="cerrar" onclick="cerrarPanel()">✕</button>
+  <div class="contenido">
+    <h2>📝 AGREGAR PARTICIPANTES</h2>
+    <p class="instrucciones">Escribe un participante por línea con el formato: <strong>Nombre, Celular</strong></p>
+    <textarea id="inputParticipantes" placeholder="Pedro Pérez, 0424-1234567
+María González, 0414-7654321
+José Ramírez, 0426-9876543"></textarea>
+    <div class="acciones">
+      <button class="btn-agregar" onclick="agregarParticipantes()">➕ Agregar</button>
+      <button class="btn-reemplazar" onclick="reemplazarParticipantes()">🔄 Reemplazar</button>
+      <button class="btn-limpiar" onclick="limpiarParticipantes()">🗑️ Limpiar</button>
+    </div>
+    <div class="lista-actual">
+      <h3>Participantes actuales (<span id="contadorPanel">0</span>)</h3>
+      <div id="listaParticipantesPanel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ANUNCIO GANADOR -->
 <div class="anuncio" id="anuncio">
   <div class="pulpo-grande"><img src="pulpo.png" alt="Pulpo Cordial"></div>
   <div class="premio" id="premioTexto">🥇 PRIMER PREMIO</div>
@@ -190,7 +313,11 @@
 </div>
 
 <script>
-const participantes = [
+// ===== PARTICIPANTES =====
+let participantes = [];
+
+// Datos de prueba (puedes borrarlos)
+participantes = [
   { nombre: "Pedro Pérez", cel: "0424-1234567" },
   { nombre: "María González", cel: "0414-7654321" },
   { nombre: "José Ramírez", cel: "0426-9876543" },
@@ -200,60 +327,20 @@ const participantes = [
   { nombre: "Juan Sánchez", cel: "0414-2223344" },
   { nombre: "Rosa Fernández", cel: "0426-3334455" },
   { nombre: "Carlos Torres", cel: "0412-4445566" },
-  { nombre: "Laura Jiménez", cel: "0416-5556677" },
-  { nombre: "Miguel Vargas", cel: "0424-6667788" },
-  { nombre: "Sofia Castro", cel: "0414-7778899" },
-  { nombre: "Diego Rojas", cel: "0426-8889900" },
-  { nombre: "Elena Morales", cel: "0412-9990011" },
-  { nombre: "Andrés Silva", cel: "0416-0001122" },
-  { nombre: "Patricia Ortiz", cel: "0424-1231234" },
-  { nombre: "Fernando Reyes", cel: "0414-2342345" },
-  { nombre: "Gabriela Mendoza", cel: "0426-3453456" },
-  { nombre: "Ricardo Peña", cel: "0412-4564567" },
-  { nombre: "Valentina Guzmán", cel: "0416-5675678" },
-  { nombre: "Jorge Herrera", cel: "0424-6786789" },
-  { nombre: "Daniela Medina", cel: "0414-7897890" },
-  { nombre: "Manuel Castro", cel: "0426-8908901" },
-  { nombre: "Camila Ríos", cel: "0412-9019012" },
-  { nombre: "Roberto Luna", cel: "0416-0120123" },
-  { nombre: "Isabel Paredes", cel: "0424-1351351" },
-  { nombre: "Alberto Nieto", cel: "0414-2462462" },
-  { nombre: "Lucía Campos", cel: "0426-3573573" },
-  { nombre: "Héctor Salazar", cel: "0412-4684684" },
-  { nombre: "Natalia Fuentes", cel: "0416-5795795" },
-  { nombre: "Óscar Delgado", cel: "0424-6806806" },
-  { nombre: "Verónica Aguilar", cel: "0414-7917917" },
-  { nombre: "Raúl Cabrera", cel: "0426-8028028" },
-  { nombre: "Monica Solís", cel: "0412-9139139" },
-  { nombre: "Felipe Navarro", cel: "0416-0240240" },
-  { nombre: "Adriana Vega", cel: "0424-1471471" },
-  { nombre: "Sergio Ibarra", cel: "0414-2582582" },
-  { nombre: "Paola Cárdenas", cel: "0426-3693693" },
-  { nombre: "Tomás Bustos", cel: "0412-4704704" },
-  { nombre: "Andrea Escobar", cel: "0416-5815815" },
-  { nombre: "Iván Márquez", cel: "0424-6926926" },
-  { nombre: "Claudia Rivas", cel: "0414-7037037" },
-  { nombre: "Pablo Cordero", cel: "0426-8148148" },
-  { nombre: "Sandra Ponce", cel: "0412-9259259" },
-  { nombre: "Emilio Tapia", cel: "0416-0360360" },
-  { nombre: "Rocío Barrera", cel: "0424-1591591" },
-  { nombre: "Gustavo Leal", cel: "0414-2602602" },
-  { nombre: "Lorena Salas", cel: "0426-3713713" },
-  { nombre: "Nicolás Pinto", cel: "0412-4824824" },
-  { nombre: "Fátima Cornejo", cel: "0416-5935935" }
+  { nombre: "Laura Jiménez", cel: "0416-5556677" }
 ];
-
-document.getElementById('totalParticipantes').textContent = participantes.length;
 
 const canvas = document.getElementById('ruleta');
 const ctx = canvas.getContext('2d');
 const colores = ['#fbbf24', '#1a4b8c', '#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
-const total = participantes.length;
-const anguloPorParticipante = (Math.PI * 2) / total;
+
+let anguloPorParticipante = 0;
+let total = 0;
 let rotacionActual = 0;
 let girando = false;
 
-const premios = [
+// Premios por defecto (5 premios = 50% del pozo)
+let premios = [
   { pos: "🥇", monto: "$50", label: "PRIMER PREMIO" },
   { pos: "🥈", monto: "$20", label: "SEGUNDO PREMIO" },
   { pos: "🥉", monto: "$10", label: "TERCER PREMIO" },
@@ -264,6 +351,71 @@ const premios = [
 let ganadoresActuales = [];
 let premioActual = 0;
 
+// ===== ACTUALIZAR CONTADOR =====
+function actualizarContador() {
+  document.getElementById('totalParticipantes').textContent = participantes.length;
+}
+
+// ===== CARGAR PARTICIPANTES =====
+function cargarParticipantes() {
+  total = participantes.length;
+  anguloPorParticipante = total > 0 ? (Math.PI * 2) / total : 0;
+  dibujarRuleta();
+  actualizarContador();
+}
+
+// ===== DIBUJAR =====
+function dibujarRuleta() {
+  const centroX = canvas.width / 2;
+  const centroY = canvas.height / 2;
+  const radio = canvas.width / 2 - 30;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (total === 0) {
+    ctx.fillStyle = '#112b4f';
+    ctx.beginPath();
+    ctx.arc(centroX, centroY, radio, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#a0c4e8';
+    ctx.font = 'bold 24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Sin participantes', centroX, centroY - 10);
+    ctx.font = '18px Arial';
+    ctx.fillText('Agrega participantes para comenzar', centroX, centroY + 20);
+    return;
+  }
+
+  for (let i = 0; i < total; i++) {
+    const anguloInicio = i * anguloPorParticipante + rotacionActual;
+    const anguloFin = anguloInicio + anguloPorParticipante;
+
+    ctx.beginPath();
+    ctx.moveTo(centroX, centroY);
+    ctx.arc(centroX, centroY, radio, anguloInicio, anguloFin);
+    ctx.closePath();
+    ctx.fillStyle = colores[i % colores.length];
+    ctx.fill();
+    ctx.strokeStyle = '#0b1c3a';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(centroX, centroY);
+    ctx.rotate(anguloInicio + anguloPorParticipante / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#0b1c3a';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText(participantes[i].nombre, radio - 20, -5);
+    ctx.font = '11px Arial';
+    ctx.fillText(participantes[i].cel, radio - 20, 10);
+    ctx.restore();
+  }
+}
+
+cargarParticipantes();
+
+// ===== AUDIO =====
 let audioCtx = null;
 function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -302,6 +454,7 @@ function sonarFanfarria() {
   });
 }
 
+// ===== VOZ =====
 function hablar(texto) {
   if (!('speechSynthesis' in window)) return;
   try {
@@ -355,42 +508,7 @@ if ('speechSynthesis' in window) {
   };
 }
 
-function dibujarRuleta() {
-  const centroX = canvas.width / 2;
-  const centroY = canvas.height / 2;
-  const radio = canvas.width / 2 - 30;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  for (let i = 0; i < total; i++) {
-    const anguloInicio = i * anguloPorParticipante + rotacionActual;
-    const anguloFin = anguloInicio + anguloPorParticipante;
-
-    ctx.beginPath();
-    ctx.moveTo(centroX, centroY);
-    ctx.arc(centroX, centroY, radio, anguloInicio, anguloFin);
-    ctx.closePath();
-    ctx.fillStyle = colores[i % colores.length];
-    ctx.fill();
-    ctx.strokeStyle = '#0b1c3a';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.save();
-    ctx.translate(centroX, centroY);
-    ctx.rotate(anguloInicio + anguloPorParticipante / 2);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#0b1c3a';
-    ctx.font = 'bold 16px Arial';
-    ctx.fillText(participantes[i].nombre, radio - 20, -5);
-    ctx.font = '12px Arial';
-    ctx.fillText(participantes[i].cel, radio - 20, 12);
-    ctx.restore();
-  }
-}
-
-dibujarRuleta();
-
+// ===== GIRAR =====
 function girarUnaVez() {
   return new Promise((resolve) => {
     const vueltas = 6 + Math.random() * 4;
@@ -430,11 +548,16 @@ function calcularGanador() {
   let anguloNormalizado = (anguloAguja - rotacionActual) % (Math.PI * 2);
   if (anguloNormalizado < 0) anguloNormalizado += Math.PI * 2;
   const indiceGanador = Math.floor(anguloNormalizado / anguloPorParticipante) % total;
-  return participantes[indiceGanador];
+  return indiceGanador;
 }
 
+// ===== SORTEO =====
 function iniciarSorteo() {
   if (girando) return;
+  if (participantes.length === 0) {
+    alert('No hay participantes. Agrega algunos primero.');
+    return;
+  }
   initAudio();
   girando = true;
   premioActual = 0;
@@ -451,12 +574,12 @@ function iniciarSorteo() {
 }
 
 async function girarSiguiente() {
-  if (premioActual >= premios.length) {
+  if (premioActual >= premios.length || participantes.length === 0) {
     mostrarListaGanadores();
     girando = false;
     document.getElementById('btnGirar').disabled = false;
     
-    let mensaje = "¡Tenemos nuestros cinco ganadores! ";
+    let mensaje = "¡Tenemos nuestros ganadores! ";
     const posiciones = ["En primer lugar", "En segundo lugar", "En tercer lugar", "En cuarto lugar", "En quinto lugar"];
     ganadoresActuales.forEach((g, i) => {
       mensaje += posiciones[i] + ", " + g.nombre + ", ganó " + g.premio.monto + ". ";
@@ -468,8 +591,13 @@ async function girarSiguiente() {
   }
 
   await girarUnaVez();
-  const ganador = calcularGanador();
+  const indiceGanador = calcularGanador();
+  const ganador = participantes[indiceGanador];
   ganadoresActuales.push({ ...ganador, premio: premios[premioActual] });
+
+  // ELIMINAR al ganador de la ruleta (no puede ganar 2 veces)
+  participantes.splice(indiceGanador, 1);
+  cargarParticipantes();
 
   sonarFanfarria();
   mostrarAnuncio(ganador, premios[premioActual]);
@@ -505,6 +633,99 @@ function mostrarListaGanadores() {
     </div>
   `).join('');
   document.getElementById('listaGanadores').classList.add('activo');
+}
+
+// ===== PANEL ADMIN =====
+function abrirPanel() {
+  document.getElementById('panelAdmin').classList.add('activo');
+  actualizarListaPanel();
+}
+
+function cerrarPanel() {
+  document.getElementById('panelAdmin').classList.remove('activo');
+}
+
+function actualizarListaPanel() {
+  document.getElementById('contadorPanel').textContent = participantes.length;
+  const contenedor = document.getElementById('listaParticipantesPanel');
+  contenedor.innerHTML = participantes.map((p, i) => `
+    <div class="item">
+      <span class="nombre">${p.nombre}</span>
+      <span class="cel">${p.cel}</span>
+      <button class="eliminar" onclick="eliminarParticipante(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function eliminarParticipante(indice) {
+  participantes.splice(indice, 1);
+  cargarParticipantes();
+  actualizarListaPanel();
+}
+
+function agregarParticipantes() {
+  const texto = document.getElementById('inputParticipantes').value.trim();
+  if (!texto) {
+    alert('Escribe al menos un participante');
+    return;
+  }
+  const lineas = texto.split('\n');
+  let agregados = 0;
+  lineas.forEach(linea => {
+    const partes = linea.split(',');
+    if (partes.length >= 2) {
+      const nombre = partes[0].trim();
+      const cel = partes[1].trim();
+      if (nombre && cel) {
+        participantes.push({ nombre, cel });
+        agregados++;
+      }
+    }
+  });
+  if (agregados === 0) {
+    alert('No se agregó ningún participante. Verifica el formato: Nombre, Celular');
+    return;
+  }
+  document.getElementById('inputParticipantes').value = '';
+  cargarParticipantes();
+  actualizarListaPanel();
+  alert('✅ ' + agregados + ' participante(s) agregado(s)');
+}
+
+function reemplazarParticipantes() {
+  const texto = document.getElementById('inputParticipantes').value.trim();
+  if (!texto) {
+    alert('Escribe al menos un participante');
+    return;
+  }
+  const nuevos = [];
+  const lineas = texto.split('\n');
+  lineas.forEach(linea => {
+    const partes = linea.split(',');
+    if (partes.length >= 2) {
+      const nombre = partes[0].trim();
+      const cel = partes[1].trim();
+      if (nombre && cel) {
+        nuevos.push({ nombre, cel });
+      }
+    }
+  });
+  if (nuevos.length === 0) {
+    alert('No se agregó ningún participante. Verifica el formato: Nombre, Celular');
+    return;
+  }
+  participantes = nuevos;
+  document.getElementById('inputParticipantes').value = '';
+  cargarParticipantes();
+  actualizarListaPanel();
+  alert('🔄 Lista reemplazada con ' + nuevos.length + ' participante(s)');
+}
+
+function limpiarParticipantes() {
+  if (!confirm('¿Seguro que quieres eliminar TODOS los participantes?')) return;
+  participantes = [];
+  cargarParticipantes();
+  actualizarListaPanel();
 }
 </script>
 
