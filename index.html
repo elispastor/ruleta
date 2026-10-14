@@ -17,39 +17,8 @@
   .encabezado { text-align: center; margin-bottom: 20px; }
   .pulpo { font-size: 3rem; margin-bottom: 10px; animation: flotar 2s ease-in-out infinite; }
   @keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-  .pulpo.hablando { animation: hablar 0.3s ease-in-out infinite; }
-  @keyframes hablar {
-    0%, 100% { transform: translateY(0) scale(1); }
-    50% { transform: translateY(-5px) scale(1.1); }
-  }
   .titulo { font-size: 1.8rem; font-weight: 800; color: #fbbf24; text-shadow: 0 0 20px rgba(251,191,36,0.5); text-align: center; }
   .subtitulo { font-size: 0.95rem; color: #a0c4e8; text-align: center; margin-top: 5px; }
-
-  .burbuja {
-    background: white; color: #0b1c3a;
-    border-radius: 20px;
-    padding: 15px 20px;
-    margin: 15px auto;
-    max-width: 500px;
-    font-size: 1rem;
-    text-align: center;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    display: none;
-  }
-  .burbuja.activa { display: block; animation: aparecerBurbuja 0.3s ease; }
-  @keyframes aparecerBurbuja {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .burbuja::after {
-    content: ''; position: absolute;
-    bottom: -15px; left: 50%;
-    transform: translateX(-50%);
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-top: 15px solid white;
-  }
 
   .ruleta-wrapper {
     position: relative;
@@ -106,13 +75,8 @@
     align-items: center; justify-content: center;
     padding: 20px;
     text-align: center;
-    animation: aparecer 0.5s ease;
   }
   .anuncio.activo { display: flex; }
-  @keyframes aparecer {
-    from { opacity: 0; transform: scale(0.8); }
-    to { opacity: 1; transform: scale(1); }
-  }
   .anuncio .premio { font-size: 1.5rem; color: #fbbf24; font-weight: bold; margin-bottom: 10px; letter-spacing: 2px; }
   .anuncio .pulpo-grande { font-size: 5rem; margin-bottom: 15px; animation: flotar 1s ease-in-out infinite; }
   .anuncio .nombre-gigante {
@@ -130,6 +94,7 @@
     font-size: 1.1rem; font-weight: bold;
     cursor: pointer;
   }
+  .anuncio .cerrar:hover { transform: scale(1.05); }
 
   .contador { margin-top: 20px; color: #a0c4e8; font-size: 0.95rem; text-align: center; }
   .contador strong { color: #fbbf24; font-size: 1.3rem; }
@@ -161,12 +126,10 @@
 <body>
 
 <div class="encabezado">
-  <div class="pulpo" id="pulpo">🐙</div>
+  <div class="pulpo">🐙</div>
   <div class="titulo">LA RULETA DEL PULPO CORDIAL</div>
   <div class="subtitulo">Comunidad que se ayuda</div>
 </div>
-
-<div class="burbuja" id="burbuja">¡Hola! Soy el Pulpo Cordial</div>
 
 <div class="ruleta-wrapper">
   <div class="aguja"></div>
@@ -195,7 +158,6 @@
 </div>
 
 <script>
-// ===== PARTICIPANTES =====
 const participantes = [
   { nombre: "Pedro Pérez", cel: "0424-1234567" },
   { nombre: "María González", cel: "0414-7654321" },
@@ -308,66 +270,6 @@ function sonarFanfarria() {
   });
 }
 
-// ===== VOZ DE MUJER =====
-function hablar(texto, callback) {
-  if (!('speechSynthesis' in window)) {
-    if (callback) callback();
-    return;
-  }
-  window.speechSynthesis.cancel();
-  const voz = new SpeechSynthesisUtterance(texto);
-  voz.lang = 'es-ES';
-  voz.rate = 0.9;
-  voz.pitch = 1.3;
-  voz.volume = 1;
-
-  const voces = window.speechSynthesis.getVoices();
-  let vozMujer = voces.find(v => v.lang.startsWith('es') && 
-    (v.name.toLowerCase().includes('mujer') || 
-     v.name.toLowerCase().includes('female') || 
-     v.name.toLowerCase().includes('monica') || 
-     v.name.toLowerCase().includes('paulina') || 
-     v.name.toLowerCase().includes('helena') ||
-     v.name.toLowerCase().includes('sabina') ||
-     v.name.toLowerCase().includes('carmen') ||
-     v.name.toLowerCase().includes('lucia') ||
-     v.name.toLowerCase().includes('mónica')));
-  
-  if (!vozMujer) {
-    vozMujer = voces.find(v => v.lang.startsWith('es'));
-  }
-  if (vozMujer) voz.voice = vozMujer;
-
-  const pulpo = document.getElementById('pulpo');
-  const burbuja = document.getElementById('burbuja');
-
-  pulpo.classList.add('hablando');
-  burbuja.textContent = texto;
-  burbuja.classList.add('activa');
-
-  voz.onend = () => {
-    pulpo.classList.remove('hablando');
-    burbuja.classList.remove('activa');
-    if (callback) callback();
-  };
-
-  voz.onerror = () => {
-    pulpo.classList.remove('hablando');
-    burbuja.classList.remove('activa');
-    if (callback) callback();
-  };
-
-  window.speechSynthesis.speak(voz);
-}
-
-// Cargar voces al inicio
-if ('speechSynthesis' in window) {
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = () => {
-    window.speechSynthesis.getVoices();
-  };
-}
-
 // ===== DIBUJAR =====
 function dibujarRuleta() {
   const centroX = canvas.width / 2;
@@ -410,7 +312,7 @@ function girarUnaVez() {
   return new Promise((resolve) => {
     const vueltas = 6 + Math.random() * 4;
     const anguloFinal = Math.random() * Math.PI * 2;
-    const duracion = 8000;
+    const duracion = 6000;
     const inicio = performance.now();
     const rotacionInicial = rotacionActual;
     let ultimoTic = 0;
@@ -448,80 +350,36 @@ function calcularGanador() {
   return participantes[indiceGanador];
 }
 
-// ===== SORTEO COMPLETO =====
-async function iniciarSorteo() {
+// ===== SORTEO =====
+let premioActual = 0;
+
+function iniciarSorteo() {
   if (girando) return;
   initAudio();
-  
-  // Forzar audio
-  sonarTic();
-  
-  // Forzar voz
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    const forzar = new SpeechSynthesisUtterance(' ');
-    forzar.volume = 0;
-    window.speechSynthesis.speak(forzar);
-  }
-  
   girando = true;
-  document.getElementById('btnGirar').disabled = true;
+  premioActual = 0;
   ganadoresActuales = [];
+  document.getElementById('btnGirar').disabled = true;
   document.getElementById('itemsGanadores').innerHTML = '';
   document.getElementById('listaGanadores').classList.remove('activo');
-
-  // Bienvenida con voz
-  await new Promise(r => {
-    hablar("¡Atención, atención! Bienvenidos al sorteo de la Ruleta del Pulpo Cordial. Esta ronda apoya al Comedor Social y a la Proveeduría de Medicamentos de La Cumaca. Vamos a lanzar la primera ruleta. ¡Atención todos! Uno... dos... tres... ¡Adelante!", r);
-  });
-
-  for (let i = 0; i < premios.length; i++) {
-    await girarUnaVez();
-    const ganador = calcularGanador();
-    ganadoresActuales.push({ ...ganador, premio: premios[i] });
-
-    // Fanfarria doble
-    sonarFanfarria();
-    await new Promise(r => setTimeout(r, 600));
-    sonarFanfarria();
-
-    // Anuncio gigante
-    mostrarAnuncio(ganador, premios[i]);
-
-    // Felicitación con voz
-    await new Promise(r => {
-      hablar(`¡Felicidades, ${ganador.nombre}! Ganaste el ${premios[i].label} de ${premios[i].monto}. Tu número es ${ganador.cel}. ¡Felicidades!`, r);
-    });
-
-    // Esperar cierre del anuncio
-    await esperarCierre();
-
-    // Pausa entre premios
-    if (i < premios.length - 1) {
-      await new Promise(r => setTimeout(r, 1500));
-      await new Promise(r => {
-        hablar(`Vamos con el siguiente sorteo. ¡Atención!`, r);
-      });
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-
-  // Mensaje final con voz
-  await new Promise(r => {
-    hablar("¡Tenemos nuestros cinco ganadores! Felicidades a todos. Recuerda: ayudando ganas, y ganando ayudas. ¡Nos vemos en el próximo sorteo!", r);
-  });
-
-  mostrarListaGanadores();
-
-  girando = false;
-  document.getElementById('btnGirar').disabled = false;
+  girarSiguiente();
 }
 
-let resolverCierre = null;
-function esperarCierre() {
-  return new Promise((resolve) => {
-    resolverCierre = resolve;
-  });
+async function girarSiguiente() {
+  if (premioActual >= premios.length) {
+    // Terminó el sorteo
+    mostrarListaGanadores();
+    girando = false;
+    document.getElementById('btnGirar').disabled = false;
+    return;
+  }
+
+  await girarUnaVez();
+  const ganador = calcularGanador();
+  ganadoresActuales.push({ ...ganador, premio: premios[premioActual] });
+
+  sonarFanfarria();
+  mostrarAnuncio(ganador, premios[premioActual]);
 }
 
 function mostrarAnuncio(ganador, premio) {
@@ -533,10 +391,10 @@ function mostrarAnuncio(ganador, premio) {
 
 function cerrarAnuncio() {
   document.getElementById('anuncio').classList.remove('activo');
-  if (resolverCierre) {
-    resolverCierre();
-    resolverCierre = null;
-  }
+  premioActual++;
+  setTimeout(() => {
+    girarSiguiente();
+  }, 500);
 }
 
 function mostrarListaGanadores() {
