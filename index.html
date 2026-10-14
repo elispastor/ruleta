@@ -773,6 +773,32 @@ function eliminarParticipante(indice) {
   actualizarListaPanel();
 }
 
+// Función mágica: extrae nombre y celular de cualquier formato
+function parsearLinea(linea) {
+  let texto = linea.trim();
+  if (!texto) return null;
+
+  // Patrón para detectar números de teléfono (10-11 dígitos con separadores opcionales)
+  const patronTelefono = /(\+?58)?[\s.-]?(\d{3,4})[\s.-]?(\d{3})[\s.-]?(\d{3,4})/;
+  
+  const match = texto.match(patronTelefono);
+  
+  if (match) {
+    const telefonoEncontrado = match[0].trim();
+    let nombre = texto.substring(0, match.index).trim();
+    nombre = nombre.replace(/[,;.\-]+$/, '').trim();
+    
+    if (!nombre) {
+      nombre = "Participante";
+    }
+    
+    const celular = telefonoEncontrado.replace(/\s+/g, ' ').trim();
+    return { nombre, cel: celular };
+  } else {
+    return { nombre: texto, cel: "---" };
+  }
+}
+
 function agregarParticipantes() {
   const texto = document.getElementById('inputParticipantes').value.trim();
   if (!texto) {
@@ -781,19 +807,17 @@ function agregarParticipantes() {
   }
   const lineas = texto.split('\n');
   let agregados = 0;
+  
   lineas.forEach(linea => {
-    const partes = linea.split(',');
-    if (partes.length >= 2) {
-      const nombre = partes[0].trim();
-      const cel = partes[1].trim();
-      if (nombre && cel) {
-        participantes.push({ nombre, cel });
-        agregados++;
-      }
+    const participante = parsearLinea(linea);
+    if (participante) {
+      participantes.push(participante);
+      agregados++;
     }
   });
+  
   if (agregados === 0) {
-    alert('No se agregó ningún participante. Verifica el formato: Nombre, Celular');
+    alert('No se pudo agregar ningún participante.');
     return;
   }
   document.getElementById('inputParticipantes').value = '';
@@ -810,18 +834,16 @@ function reemplazarParticipantes() {
   }
   const nuevos = [];
   const lineas = texto.split('\n');
+  
   lineas.forEach(linea => {
-    const partes = linea.split(',');
-    if (partes.length >= 2) {
-      const nombre = partes[0].trim();
-      const cel = partes[1].trim();
-      if (nombre && cel) {
-        nuevos.push({ nombre, cel });
-      }
+    const participante = parsearLinea(linea);
+    if (participante) {
+      nuevos.push(participante);
     }
   });
+  
   if (nuevos.length === 0) {
-    alert('No se agregó ningún participante. Verifica el formato: Nombre, Celular');
+    alert('No se pudo agregar ningún participante.');
     return;
   }
   participantes = nuevos;
