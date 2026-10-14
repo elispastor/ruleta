@@ -15,13 +15,14 @@
     overflow-x: hidden;
   }
   .encabezado { text-align: center; margin-bottom: 20px; }
-  .pulpo { font-size: 3rem; margin-bottom: 10px; animation: flotar 2s ease-in-out infinite; }
+  .pulpo { width: 100px; height: 100px; margin: 0 auto 10px; animation: flotar 2s ease-in-out infinite; }
   @keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
   .pulpo.hablando { animation: hablar 0.3s ease-in-out infinite; }
   @keyframes hablar {
     0%, 100% { transform: translateY(0) scale(1); }
     50% { transform: translateY(-5px) scale(1.1); }
   }
+  .pulpo img { width: 100%; height: 100%; object-fit: contain; }
   .titulo { font-size: 1.8rem; font-weight: 800; color: #fbbf24; text-shadow: 0 0 20px rgba(251,191,36,0.5); text-align: center; }
   .subtitulo { font-size: 0.95rem; color: #a0c4e8; text-align: center; margin-top: 5px; }
 
@@ -76,9 +77,11 @@
     border: 6px solid #fbbf24;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 2.8rem; z-index: 5;
+    z-index: 5;
     box-shadow: 0 0 40px rgba(251,191,36,0.8);
+    padding: 5px;
   }
+  .centro img { width: 100%; height: 100%; object-fit: contain; }
 
   .btn-girar {
     background: #fbbf24; color: #0b1c3a;
@@ -105,8 +108,9 @@
   }
   .anuncio.activo { display: flex; }
   .anuncio .premio { font-size: 1.5rem; color: #fbbf24; font-weight: bold; margin-bottom: 10px; letter-spacing: 2px; }
-.anuncio .pulpo-grande { width: 150px; height: 150px; margin: 0 auto 15px; animation: flotar 1s ease-in-out infinite; }  
- .anuncio .nombre-gigante {
+  .anuncio .pulpo-grande { width: 150px; height: 150px; margin: 0 auto 15px; animation: flotar 1s ease-in-out infinite; }
+  .anuncio .pulpo-grande img { width: 100%; height: 100%; object-fit: contain; }
+  .anuncio .nombre-gigante {
     font-size: 3rem; color: white;
     font-weight: 900; text-shadow: 0 0 30px rgba(251,191,36,0.8);
     margin: 10px 0; line-height: 1.1;
@@ -152,7 +156,8 @@
 <body>
 
 <div class="encabezado">
-<div class="pulpo" id="pulpo"><img src="pulpo.png" alt="Pulpo Cordial" style="width: 100%; height: 100%; object-fit: contain;"></div>  <div class="titulo">LA RULETA DEL PULPO CORDIAL</div>
+  <div class="pulpo" id="pulpo"><img src="pulpo.png" alt="Pulpo Cordial"></div>
+  <div class="titulo">LA RULETA DEL PULPO CORDIAL</div>
   <div class="subtitulo">Comunidad que se ayuda</div>
 </div>
 
@@ -161,7 +166,8 @@
 <div class="ruleta-wrapper">
   <div class="aguja"></div>
   <canvas id="ruleta" width="1000" height="1000"></canvas>
-<div class="centro"><img src="pulpo.png" alt="Pulpo Cordial" style="width: 100%; height: 100%; object-fit: contain;"></div></div>
+  <div class="centro"><img src="pulpo.png" alt="Pulpo Cordial"></div>
+</div>
 
 <button class="btn-girar" id="btnGirar" onclick="iniciarSorteo()">🎰 GIRAR</button>
 
@@ -175,7 +181,8 @@
 </div>
 
 <div class="anuncio" id="anuncio">
-<div class="pulpo-grande"><img src="pulpo.png" alt="Pulpo Cordial" style="width: 120px; height: 120px; object-fit: contain;"></div>  <div class="premio" id="premioTexto">🥇 PRIMER PREMIO</div>
+  <div class="pulpo-grande"><img src="pulpo.png" alt="Pulpo Cordial"></div>
+  <div class="premio" id="premioTexto">🥇 PRIMER PREMIO</div>
   <div class="nombre-gigante" id="nombreGigante">Pedro Pérez</div>
   <div class="cel-gigante" id="celGigante">0424-1234567</div>
   <div class="estrellas">🎉 ✨ 🎊 ✨ 🎉</div>
@@ -257,7 +264,6 @@ const premios = [
 let ganadoresActuales = [];
 let premioActual = 0;
 
-// ===== AUDIO =====
 let audioCtx = null;
 function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -296,7 +302,6 @@ function sonarFanfarria() {
   });
 }
 
-// ===== VOZ SEGURA =====
 function hablar(texto) {
   if (!('speechSynthesis' in window)) return;
   try {
@@ -350,7 +355,6 @@ if ('speechSynthesis' in window) {
   };
 }
 
-// ===== DIBUJAR =====
 function dibujarRuleta() {
   const centroX = canvas.width / 2;
   const centroY = canvas.height / 2;
@@ -387,7 +391,6 @@ function dibujarRuleta() {
 
 dibujarRuleta();
 
-// ===== GIRAR =====
 function girarUnaVez() {
   return new Promise((resolve) => {
     const vueltas = 6 + Math.random() * 4;
@@ -430,7 +433,6 @@ function calcularGanador() {
   return participantes[indiceGanador];
 }
 
-// ===== SORTEO =====
 function iniciarSorteo() {
   if (girando) return;
   initAudio();
