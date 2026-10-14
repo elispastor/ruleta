@@ -164,7 +164,6 @@
   .btn-limpiar { background: #ef4444; color: white; }
   .panel-admin .acciones button:hover { transform: scale(1.03); }
 
-  /* ===== MICRÓFONO ===== */
   .zona-micro {
     background: rgba(0,0,0,0.3);
     border-radius: 15px;
@@ -319,14 +318,12 @@
   <div id="itemsGanadores"></div>
 </div>
 
-<!-- PANEL ADMIN -->
 <div class="panel-admin" id="panelAdmin">
   <button class="cerrar" onclick="cerrarPanel()">✕</button>
   <div class="contenido">
     <h2>📝 AGREGAR PARTICIPANTES</h2>
     <p class="instrucciones">Escribe un participante por línea: <strong>Nombre, Celular</strong></p>
     
-    <!-- ZONA DEL MICRÓFONO -->
     <div class="zona-micro">
       <div class="titulo-micro">🎤 DICTAR POR VOZ</div>
       <button class="btn-micro" id="btnMicro" onclick="toggleMicro()">🎤</button>
@@ -347,7 +344,6 @@ María González, 0414-7654321"></textarea>
   </div>
 </div>
 
-<!-- ANUNCIO GANADOR -->
 <div class="anuncio" id="anuncio">
   <div class="pulpo-grande"><img src="pulpo.png" alt="Pulpo Cordial"></div>
   <div class="premio" id="premioTexto">🥇 PRIMER PREMIO</div>
@@ -358,7 +354,6 @@ María González, 0414-7654321"></textarea>
 </div>
 
 <script>
-// ===== PARTICIPANTES =====
 let participantes = [
   { nombre: "Pedro Pérez", cel: "0424-1234567" },
   { nombre: "María González", cel: "0414-7654321" },
@@ -381,7 +376,6 @@ let total = 0;
 let rotacionActual = 0;
 let girando = false;
 
-// Premios en DÓLARES
 let premios = [
   { pos: "🥇", monto: "50 dólares", label: "PRIMER PREMIO" },
   { pos: "🥈", monto: "20 dólares", label: "SEGUNDO PREMIO" },
@@ -393,12 +387,10 @@ let premios = [
 let ganadoresActuales = [];
 let premioActual = 0;
 
-// ===== ACTUALIZAR CONTADOR =====
 function actualizarContador() {
   document.getElementById('totalParticipantes').textContent = participantes.length;
 }
 
-// ===== CARGAR PARTICIPANTES =====
 function cargarParticipantes() {
   total = participantes.length;
   anguloPorParticipante = total > 0 ? (Math.PI * 2) / total : 0;
@@ -406,7 +398,6 @@ function cargarParticipantes() {
   actualizarContador();
 }
 
-// ===== DIBUJAR =====
 function dibujarRuleta() {
   const centroX = canvas.width / 2;
   const centroY = canvas.height / 2;
@@ -457,7 +448,6 @@ function dibujarRuleta() {
 
 cargarParticipantes();
 
-// ===== AUDIO =====
 let audioCtx = null;
 function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -496,7 +486,6 @@ function sonarFanfarria() {
   });
 }
 
-// ===== VOZ =====
 function hablar(texto) {
   if (!('speechSynthesis' in window)) return;
   try {
@@ -543,6 +532,59 @@ function hablar(texto) {
   } catch(e) {}
 }
 
+function hablarConCallback(texto, callback) {
+  if (!('speechSynthesis' in window)) {
+    if (callback) callback();
+    return;
+  }
+  try {
+    window.speechSynthesis.cancel();
+    const voz = new SpeechSynthesisUtterance(texto);
+    voz.lang = 'es-ES';
+    voz.rate = 0.9;
+    voz.pitch = 1.3;
+    voz.volume = 1;
+
+    const voces = window.speechSynthesis.getVoices();
+    let vozMujer = voces.find(v => v.lang.startsWith('es') && 
+      (v.name.toLowerCase().includes('mujer') || 
+       v.name.toLowerCase().includes('female') || 
+       v.name.toLowerCase().includes('monica') || 
+       v.name.toLowerCase().includes('paulina') || 
+       v.name.toLowerCase().includes('helena') ||
+       v.name.toLowerCase().includes('sabina') ||
+       v.name.toLowerCase().includes('carmen') ||
+       v.name.toLowerCase().includes('lucia')));
+    
+    if (!vozMujer) {
+      vozMujer = voces.find(v => v.lang.startsWith('es'));
+    }
+    if (vozMujer) voz.voice = vozMujer;
+
+    const pulpo = document.getElementById('pulpo');
+    const burbuja = document.getElementById('burbuja');
+
+    pulpo.classList.add('hablando');
+    burbuja.textContent = texto;
+    burbuja.classList.add('activa');
+
+    voz.onend = () => {
+      pulpo.classList.remove('hablando');
+      burbuja.classList.remove('activa');
+      if (callback) callback();
+    };
+    voz.onerror = () => {
+      pulpo.classList.remove('hablando');
+      burbuja.classList.remove('activa');
+      if (callback) callback();
+    };
+
+    window.speechSynthesis.speak(voz);
+  } catch(e) {
+    if (callback) callback();
+  }
+}
+
 if ('speechSynthesis' in window) {
   window.speechSynthesis.getVoices();
   window.speechSynthesis.onvoiceschanged = () => {
@@ -550,7 +592,6 @@ if ('speechSynthesis' in window) {
   };
 }
 
-// ===== MICRÓFONO =====
 let reconocimiento = null;
 let escuchando = false;
 
@@ -616,7 +657,6 @@ function toggleMicro() {
   }
 }
 
-// ===== GIRAR =====
 function girarUnaVez() {
   return new Promise((resolve) => {
     const vueltas = 6 + Math.random() * 4;
@@ -659,7 +699,6 @@ function calcularGanador() {
   return indiceGanador;
 }
 
-// ===== SORTEO =====
 function iniciarSorteo() {
   if (girando) return;
   if (participantes.length === 0) {
@@ -674,14 +713,12 @@ function iniciarSorteo() {
   document.getElementById('itemsGanadores').innerHTML = '';
   document.getElementById('listaGanadores').classList.remove('activo');
   
-  // Hablar la bienvenida y ESPERAR a que termine antes de girar
   hablarConCallback(
     "¡Atención, atención! Bienvenidos al sorteo de la Ruleta del Pulpo Cordial. Esta ronda apoya al Comedor Social y a la Proveeduría de Medicamentos de La Cumaca. ¡Vamos a lanzar la ruleta!",
     () => {
       girarSiguiente();
     }
   );
-}
 }
 
 async function girarSiguiente() {
@@ -745,7 +782,6 @@ function mostrarListaGanadores() {
   document.getElementById('listaGanadores').classList.add('activo');
 }
 
-// ===== PANEL ADMIN =====
 function abrirPanel() {
   document.getElementById('panelAdmin').classList.add('activo');
   actualizarListaPanel();
@@ -776,12 +812,10 @@ function eliminarParticipante(indice) {
   actualizarListaPanel();
 }
 
-// Función mágica: extrae nombre y celular de cualquier formato
 function parsearLinea(linea) {
   let texto = linea.trim();
   if (!texto) return null;
 
-  // Patrón para detectar números de teléfono (10-11 dígitos con separadores opcionales)
   const patronTelefono = /(\+?58)?[\s.-]?(\d{3,4})[\s.-]?(\d{3})[\s.-]?(\d{3,4})/;
   
   const match = texto.match(patronTelefono);
