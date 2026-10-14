@@ -674,11 +674,14 @@ function iniciarSorteo() {
   document.getElementById('itemsGanadores').innerHTML = '';
   document.getElementById('listaGanadores').classList.remove('activo');
   
-  hablar("¡Atención, atención! Bienvenidos al sorteo de la Ruleta del Pulpo Cordial. Esta ronda apoya al Comedor Social y a la Proveeduría de Medicamentos de La Cumaca. ¡Vamos a lanzar la ruleta!");
-  
-  setTimeout(() => {
-    girarSiguiente();
-  }, 1500);
+  // Hablar la bienvenida y ESPERAR a que termine antes de girar
+  hablarConCallback(
+    "¡Atención, atención! Bienvenidos al sorteo de la Ruleta del Pulpo Cordial. Esta ronda apoya al Comedor Social y a la Proveeduría de Medicamentos de La Cumaca. ¡Vamos a lanzar la ruleta!",
+    () => {
+      girarSiguiente();
+    }
+  );
+}
 }
 
 async function girarSiguiente() {
